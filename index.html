@@ -7,13 +7,40 @@
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
     .container { max-width: 900px; margin: 0 auto; }
-    .header-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .header-banner {
+      width: 100%;
+      height: auto;
+      max-height: 250px; /* Prevents it from being too tall on huge screens */
+      object-fit: cover;
+      display: block;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
+    }
+    
+    /* We remove the default padding from header-card to let the image touch the edges */
+    .header-card { 
+      background: white; 
+      border-radius: 10px; 
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+      margin-bottom: 20px; 
+      /* removed the flex alignment here so the image spans properly */
+    }
+    
+    /* New container for the text under the banner */
+    .header-text-container {
+      padding: 20px;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      text-align: center;
+    }
     .status-msg { padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-top: 10px; }
     
     /* Group Card Styling */
     .group-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid #0056b3; }
     .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-    .drive-btn { background: #0F9D58; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+    .drive-btn { align-self: center;white-space: nowrap;height: fit-content;background: #0F9D58; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; }
     .drive-btn:hover { background: #0b7a44; }
     
     /* Scoring Grid */
@@ -33,25 +60,28 @@
 
   <div class="container">
     <div class="header-card">
-      <h1 style="margin:0; color:#0056b3;">Makerthon 2025/2026 Internal Evaluation</h1>
-      <div id="system-status" class="status-msg">Connecting to database...</div>
+      <img src="logo.png" alt="Makerthon Banner" class="header-banner">
+      
+      <div class="header-text-container">
+        <h1 style="margin:0; color:#000000;">Makerthon 2026 Internal Evaluation Form</h1>
+        <div id="system-status" class="status-msg">Connecting to database...</div>
+      </div>
     </div>
     
     <div id="groups-container" style="display: none;"></div>
   </div>
-
-  <script type="module">
+<script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 🔴 REPLACE THIS BLOCK WITH YOUR ACTUAL FIREBASE CONFIG
+    // 🔴 YOUR FIREBASE CONFIG
     const firebaseConfig = {
       apiKey: "AIzaSyAZf2-YhpXH6HNDZ_D_OfVAeHF_oHoQz2k",
-  authDomain: "makerthon-2026-internal.firebaseapp.com",
-  projectId: "makerthon-2026-internal",
-  storageBucket: "makerthon-2026-internal.firebasestorage.app",
-  messagingSenderId: "226161391410",
-  appId: "1:226161391410:web:542e04190eaeb37423092b"
+      authDomain: "makerthon-2026-internal.firebaseapp.com",
+      projectId: "makerthon-2026-internal",
+      storageBucket: "makerthon-2026-internal.firebasestorage.app",
+      messagingSenderId: "226161391410",
+      appId: "1:226161391410:web:542e04190eaeb37423092b"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -70,16 +100,17 @@
       { id: 'pres', label: 'Presentation' }
     ];
 
-    // Array of your Google Drive Links (Replace with real links later)
-    const driveLinks = [
-      "https://drive.google.com/drive/folders/17gHjZh9qd1M9HNS0DQS_JaKhStlIAXu0?usp=drive_link", //G1
-      "https://drive.google.com/drive/folders/1hxixf6vHE8fTXUoTJ9E2c3sSoWN8p9vQ?usp=drive_link", //G2
-      "https://drive.google.com/drive/folders/1l0n1ydzOe1cspA1u3qUQqcUJvh0Ptw6A?usp=drive_link", //G3
-      "https://drive.google.com/drive/folders/1PPUNT6wN61EQfNTBim9mS2Zu-T1kVegg?usp=drive_link", //G4
-      "https://drive.google.com/drive/folders/1c5AEdKibtrQow9eZNwb97_f2kPm8gSlT?usp=drive_link", //G5
-      "https://drive.google.com/drive/folders/1HSit3MYvUwcBAv51yES3M4YdoXoDEj38?usp=drive_link", //G6
-      "https://drive.google.com/drive/folders/1wX31obFk7WjJvsQJUiN03dB9pDbP8JEP?usp=drive_link", //G7
-      "https://drive.google.com/drive/folders/1LyM-qDyYhF71ZF8wi1QsOa4T0tex9Kxc?usp=drive_link" //G8
+    // ✅ REVISION 2: The Group Configuration Array
+    // You can easily change "Group 1 Name Here" to the actual team names later.
+    const groupsData = [
+      { id: 'G1', title: 'Group 1 - Smart Classroom Attendance & Automation System', link: 'https://drive.google.com/drive/folders/17gHjZh9qd1M9HNS0DQS_JaKhStlIAXu0?usp=drive_link' },
+      { id: 'G2', title: 'Group 2 - Laser-Based Security System', link: 'https://drive.google.com/drive/folders/1hxixf6vHE8fTXUoTJ9E2c3sSoWN8p9vQ?usp=drive_link' },
+      { id: 'G3', title: 'Group 3 - Smart Attendance System ', link: 'https://drive.google.com/drive/folders/1l0n1ydzOe1cspA1u3qUQqcUJvh0Ptw6A?usp=drive_link' },
+      { id: 'G4', title: 'Group 4 - NFC-Enabled Smart Card System for Campus Services', link: 'https://drive.google.com/drive/folders/1PPUNT6wN61EQfNTBim9mS2Zu-T1kVegg?usp=drive_link' },
+      { id: 'G5', title: 'Group 5 - Automated Enviromental Monitoring System', link: 'https://drive.google.com/drive/folders/1c5AEdKibtrQow9eZNwb97_f2kPm8gSlT?usp=drive_link' },
+      { id: 'G6', title: 'Group 6', link: 'https://drive.google.com/drive/folders/1HSit3MYvUwcBAv51yES3M4YdoXoDEj38?usp=drive_link' },
+      { id: 'G7', title: 'Group 7', link: 'https://drive.google.com/drive/folders/1wX31obFk7WjJvsQJUiN03dB9pDbP8JEP?usp=drive_link' },
+      { id: 'G8', title: 'Group 8', link: 'https://drive.google.com/drive/folders/1LyM-qDyYhF71ZF8wi1QsOa4T0tex9Kxc?usp=drive_link' }
     ];
 
     let currentJudgeData = {};
@@ -98,7 +129,7 @@
 
         if (docSnap.exists()) {
           currentJudgeData = docSnap.data();
-          statusDiv.innerHTML = `Welcome, <strong>${currentJudgeData.name}</strong>! Please evaluate all 8 groups below.`;
+          statusDiv.innerHTML = `Greetings, <strong>${currentJudgeData.name}</strong>. Please evaluate all 8 groups below.`;
           statusDiv.style.background = "#e8f5e9"; statusDiv.style.color = "green";
           
           buildGroupCards();
@@ -114,53 +145,61 @@
 
     function buildGroupCards() {
       const container = document.getElementById('groups-container');
-      container.innerHTML = ""; // Clear loader
+      container.innerHTML = ""; 
 
-      // Loop to create 8 groups
-      for (let g = 1; g <= 8; g++) {
-        const groupId = `G${g}`;
-        // Check if database already has scores for this group (The Resume Feature)
-        const savedScores = currentJudgeData.scores ? currentJudgeData.scores[groupId] : null;
+      // Loop through the groupsData array instead of a generic counter
+      groupsData.forEach(group => {
+        const savedScores = currentJudgeData.scores ? currentJudgeData.scores[group.id] : null;
 
         let gridHTML = "";
         criteria.forEach(c => {
-          // Pre-fill input if data exists, otherwise leave blank
           let val = savedScores ? savedScores[c.id] : ""; 
+          // Added enforceValidation(this) to the oninput event
           gridHTML += `
             <div class="score-item">
               <label>${c.label} (Max 30)</label>
-              <input type="number" class="score-input" id="${groupId}-${c.id}" min="0" max="30" value="${val}" oninput="calculateTotal('${groupId}')">
+              <input type="number" class="score-input" id="${group.id}-${c.id}" value="${val}" oninput="enforceValidation(this); calculateTotal('${group.id}')">
             </div>
           `;
         });
 
-        // Pre-fill total if data exists
         let totalVal = savedScores ? savedScores.total : 0;
 
         const cardHTML = `
-          <div class="group-card" id="card-${groupId}">
+          <div class="group-card" id="card-${group.id}">
             <div class="group-header">
-              <h2 style="margin:0;">Group ${g}</h2>
-              <a href="${driveLinks[g-1]}" target="_blank" class="drive-btn">📁 View Google Drive</a>
+              <h2 style="margin:0;">${group.title}</h2>
+              <a href="${group.link}" target="_blank" class="drive-btn">📁 View Google Drive</a>
             </div>
             <div class="score-grid">${gridHTML}</div>
             <div class="card-footer">
-              <div class="total-score">Total: <span id="total-${groupId}">${totalVal}</span> / 180</div>
-              <button class="save-btn" id="btn-${groupId}" onclick="saveGroupScore('${groupId}')">💾 Save Score</button>
+              <div class="total-score">Total: <span id="total-${group.id}">${totalVal}</span> / 180</div>
+              <button class="save-btn" id="btn-${group.id}" onclick="saveGroupScore('${group.id}')">💾 Save Score</button>
             </div>
           </div>
         `;
         container.innerHTML += cardHTML;
-      }
+      });
     }
 
-    // Attach to window object so inline HTML 'onclick' can find these functions
+    // ✅ REVISION 1: Strict input validation function
+    window.enforceValidation = function(inputElement) {
+      // 1. Strip out any non-numeric characters (like 'e', '.', '-')
+      inputElement.value = inputElement.value.replace(/[^0-9]/g, '');
+      
+      // 2. Convert to integer and clamp between 0 and 30
+      if (inputElement.value !== "") {
+        let val = parseInt(inputElement.value);
+        if (val > 30) inputElement.value = 30;
+        if (val < 0) inputElement.value = 0;
+      }
+    };
+
     window.calculateTotal = function(groupId) {
       let total = 0;
       criteria.forEach(c => {
         let val = parseInt(document.getElementById(`${groupId}-${c.id}`).value) || 0;
-        if(val > 30) val = 30; // Prevent entering 50/30
-        total += val;
+        total += val; // We don't need to limit to 30 here anymore, enforceValidation handles it!
       });
       document.getElementById(`total-${groupId}`).innerText = total;
     };
@@ -169,7 +208,6 @@
       const btn = document.getElementById(`btn-${groupId}`);
       btn.innerText = "⏳ Saving..."; btn.disabled = true;
 
-      // Gather scores from the inputs
       let groupData = {};
       let total = 0;
       criteria.forEach(c => {
@@ -180,8 +218,6 @@
       groupData.total = total;
 
       try {
-        // Write exactly to this Judge's document, targeting the specific group
-        // { merge: true } prevents deleting other groups' scores!
         const docRef = doc(db, "judges", judgeId);
         await setDoc(docRef, {
           scores: {
@@ -198,9 +234,5 @@
       }
     };
 
-    // Run when page loads
     initializeSystem();
   </script>
-
-</body>
-</html>
