@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Makerthon 2025/2026 - Judging Portal</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .status-msg { padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-top: 10px; }
+    
+    /* Group Card Styling */
+    .group-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid #0056b3; }
+    .group-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+    .drive-btn { background: #0F9D58; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 14px; }
+    .drive-btn:hover { background: #0b7a44; }
+    
+    /* Scoring Grid */
+    .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .score-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 10px; border-radius: 5px; }
+    .score-input { width: 60px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
+    
+    /* Total & Action */
+    .card-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+    .total-score { font-size: 18px; font-weight: bold; color: #b30000; }
+    .save-btn { background: #0056b3; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .save-btn:hover { background: #003d82; }
+    .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header-card">
+      <h1 style="margin:0; color:#0056b3;">Makerthon 2025/2026 Evaluation</h1>
+      <div id="system-status" class="status-msg">Connecting to database...</div>
+    </div>
+    
+    <div id="groups-container" style="display: none;"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 🔴 REPLACE THIS BLOCK WITH YOUR ACTUAL FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZf2-YhpXH6HNDZ_D_OfVAeHF_oHoQz2k",
+  authDomain: "makerthon-2026-internal.firebaseapp.com",
+  projectId: "makerthon-2026-internal",
+  storageBucket: "makerthon-2026-internal.firebasestorage.app",
+  messagingSenderId: "226161391410",
+  appId: "1:226161391410:web:542e04190eaeb37423092b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const judgeId = urlParams.get('id');
+    
+    // The 6 Criteria for Makerthon
+    const criteria = [
+      { id: 'ps', label: 'Problem Statement' },
+      { id: 'inn', label: 'Innovation' },
+      { id: 'wd', label: 'Working Design' },
+      { id: 'comp', label: 'Complexity' },
+      { id: 'cost', label: 'Design Cost' },
+      { id: 'pres', label: 'Presentation' }
+    ];
+
+    // Array of your Google Drive Links (Replace with real links later)
+    const driveLinks = [
+      "https://drive.google.com/drive/folders/1", "https://drive.google.com/drive/folders/2",
+      "https://drive.google.com/drive/folders/3", "https://drive.google.com/drive/folders/4",
+      "https://drive.google.com/drive/folders/5", "https://drive.google.com/drive/folders/6",
+      "https://drive.google.com/drive/folders/7", "https://drive.google.com/drive/folders/8"
+    ];
+
+    let currentJudgeData = {};
+
+    async function initializeSystem() {
+      const statusDiv = document.getElementById('system-status');
+      if (!judgeId) {
+        statusDiv.innerHTML = "❌ Invalid Link. Please use the private link provided by the admin.";
+        statusDiv.style.background = "#ffe8e8"; statusDiv.style.color = "red";
+        return;
+      }
+
+      try {
+        const docRef = doc(db, "judges", judgeId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          currentJudgeData = docSnap.data();
+          statusDiv.innerHTML = `Welcome, <strong>${currentJudgeData.name}</strong>! Please evaluate all 8 groups below.`;
+          statusDiv.style.background = "#e8f5e9"; statusDiv.style.color = "green";
+          
+          buildGroupCards();
+          document.getElementById('groups-container').style.display = "block";
+        } else {
+          statusDiv.innerHTML = "❌ Judge ID not found in the database.";
+          statusDiv.style.background = "#ffe8e8"; statusDiv.style.color = "red";
+        }
+      } catch (error) {
+        statusDiv.innerHTML = "❌ Database Error. Check console.";
+      }
+    }
+
+    function buildGroupCards() {
+      const container = document.getElementById('groups-container');
+      container.innerHTML = ""; // Clear loader
+
+      // Loop to create 8 groups
+      for (let g = 1; g <= 8; g++) {
+        const groupId = `G${g}`;
+        // Check if database already has scores for this group (The Resume Feature)
+        const savedScores = currentJudgeData.scores ? currentJudgeData.scores[groupId] : null;
+
+        let gridHTML = "";
+        criteria.forEach(c => {
+          // Pre-fill input if data exists, otherwise leave blank
+          let val = savedScores ? savedScores[c.id] : ""; 
+          gridHTML += `
+            <div class="score-item">
+              <label>${c.label} (Max 30)</label>
+              <input type="number" class="score-input" id="${groupId}-${c.id}" min="0" max="30" value="${val}" oninput="calculateTotal('${groupId}')">
+            </div>
+          `;
+        });
+
+        // Pre-fill total if data exists
+        let totalVal = savedScores ? savedScores.total : 0;
+
+        const cardHTML = `
+          <div class="group-card" id="card-${groupId}">
+            <div class="group-header">
+              <h2 style="margin:0;">Group ${g}</h2>
+              <a href="${driveLinks[g-1]}" target="_blank" class="drive-btn">📁 View Google Drive</a>
+            </div>
+            <div class="score-grid">${gridHTML}</div>
+            <div class="card-footer">
+              <div class="total-score">Total: <span id="total-${groupId}">${totalVal}</span> / 180</div>
+              <button class="save-btn" id="btn-${groupId}" onclick="saveGroupScore('${groupId}')">💾 Save Score</button>
+            </div>
+          </div>
+        `;
+        container.innerHTML += cardHTML;
+      }
+    }
+
+    // Attach to window object so inline HTML 'onclick' can find these functions
+    window.calculateTotal = function(groupId) {
+      let total = 0;
+      criteria.forEach(c => {
+        let val = parseInt(document.getElementById(`${groupId}-${c.id}`).value) || 0;
+        if(val > 30) val = 30; // Prevent entering 50/30
+        total += val;
+      });
+      document.getElementById(`total-${groupId}`).innerText = total;
+    };
+
+    window.saveGroupScore = async function(groupId) {
+      const btn = document.getElementById(`btn-${groupId}`);
+      btn.innerText = "⏳ Saving..."; btn.disabled = true;
+
+      // Gather scores from the inputs
+      let groupData = {};
+      let total = 0;
+      criteria.forEach(c => {
+        let val = parseInt(document.getElementById(`${groupId}-${c.id}`).value) || 0;
+        groupData[c.id] = val;
+        total += val;
+      });
+      groupData.total = total;
+
+      try {
+        // Write exactly to this Judge's document, targeting the specific group
+        // { merge: true } prevents deleting other groups' scores!
+        const docRef = doc(db, "judges", judgeId);
+        await setDoc(docRef, {
+          scores: {
+            [groupId]: groupData
+          }
+        }, { merge: true });
+
+        btn.innerText = "✅ Saved!";
+        btn.style.background = "green";
+        setTimeout(() => { btn.innerText = "💾 Update Score"; btn.disabled = false; btn.style.background = "#0056b3"; }, 2000);
+      } catch (e) {
+        console.error("Save failed:", e);
+        btn.innerText = "❌ Error"; btn.disabled = false;
+      }
+    };
+
+    // Run when page loads
+    initializeSystem();
+  </script>
+
+</body>
+</html>
