@@ -5,6 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Makerthon 2025/2026 - Judging Portal</title>
   <style>
+    .floating-save-btn {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #b30000;
+      color: white;
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: 0.3s;
+      z-index: 1000;
+    }
+
+    .floating-save-btn:hover { background: #800000; transform: scale(1.05); }
+    .floating-save-btn:disabled { background: #ccc; cursor: not-allowed; transform: none; box-shadow: none; }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
     .container { max-width: 900px; margin: 0 auto; }
     .header-banner {
@@ -70,6 +89,11 @@
     
     <div id="groups-container" style="display: none;"></div>
   </div>
+
+  <button id="save-all-btn" class="floating-save-btn" onclick="saveAllScores()" style="display: none;">
+    💾 Save All Groups Score
+  </button>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -108,12 +132,13 @@
       { id: 'G3', title: 'Group 3 - Smart Attendance System ', link: 'https://drive.google.com/drive/folders/1l0n1ydzOe1cspA1u3qUQqcUJvh0Ptw6A?usp=drive_link' },
       { id: 'G4', title: 'Group 4 - NFC-Enabled Smart Card System for Campus Services', link: 'https://drive.google.com/drive/folders/1PPUNT6wN61EQfNTBim9mS2Zu-T1kVegg?usp=drive_link' },
       { id: 'G5', title: 'Group 5 - Automated Enviromental Monitoring System', link: 'https://drive.google.com/drive/folders/1c5AEdKibtrQow9eZNwb97_f2kPm8gSlT?usp=drive_link' },
-      { id: 'G6', title: 'Group 6', link: 'https://drive.google.com/drive/folders/1HSit3MYvUwcBAv51yES3M4YdoXoDEj38?usp=drive_link' },
-      { id: 'G7', title: 'Group 7', link: 'https://drive.google.com/drive/folders/1wX31obFk7WjJvsQJUiN03dB9pDbP8JEP?usp=drive_link' },
+      { id: 'G6', title: 'Group 6 - Smart RFID-Based Dormitory Security System', link: 'https://drive.google.com/drive/folders/1HSit3MYvUwcBAv51yES3M4YdoXoDEj38?usp=drive_link' },
+      { id: 'G7', title: 'Group 7 - Spongebob Nopants', link: 'https://drive.google.com/drive/folders/1wX31obFk7WjJvsQJUiN03dB9pDbP8JEP?usp=drive_link' },
       { id: 'G8', title: 'Group 8', link: 'https://drive.google.com/drive/folders/1LyM-qDyYhF71ZF8wi1QsOa4T0tex9Kxc?usp=drive_link' }
     ];
 
     let currentJudgeData = {};
+    let unsavedChanges = false;
 
     async function initializeSystem() {
       const statusDiv = document.getElementById('system-status');
@@ -134,6 +159,7 @@
           
           buildGroupCards();
           document.getElementById('groups-container').style.display = "block";
+          document.getElementById('save-all-btn').style.display = "block";
         } else {
           statusDiv.innerHTML = "❌ Judge ID not found in the database.";
           statusDiv.style.background = "#ffe8e8"; statusDiv.style.color = "red";
@@ -184,6 +210,9 @@
 
     // ✅ REVISION 1: Strict input validation function
     window.enforceValidation = function(inputElement) {
+      // Tell the system they have unsaved work
+      unsavedChanges = true; 
+
       // 1. Strip out any non-numeric characters (like 'e', '.', '-')
       inputElement.value = inputElement.value.replace(/[^0-9]/g, '');
       
@@ -225,6 +254,9 @@
           }
         }, { merge: true });
 
+        // They saved it, so reset the warning tracker!
+        unsavedChanges = false;
+
         btn.innerText = "✅ Saved!";
         btn.style.background = "green";
         setTimeout(() => { btn.innerText = "💾 Update Score"; btn.disabled = false; btn.style.background = "#0056b3"; }, 2000);
@@ -233,6 +265,88 @@
         btn.innerText = "❌ Error"; btn.disabled = false;
       }
     };
+
+    // ✅ REVISION 3: The Master "Save All" Function
+    window.saveAllScores = async function() {
+      const mainBtn = document.getElementById('save-all-btn');
+      mainBtn.innerText = "⏳ Saving All...";
+      mainBtn.disabled = true;
+
+      let allScores = {};
+      
+      // 1. Loop through all 8 groups and gather their current input values
+      groupsData.forEach(group => {
+        let groupData = {};
+        let total = 0;
+        criteria.forEach(c => {
+          let val = parseInt(document.getElementById(`${group.id}-${c.id}`).value) || 0;
+          groupData[c.id] = val;
+          total += val;
+        });
+        groupData.total = total;
+        allScores[group.id] = groupData;
+        
+        // Change individual buttons to loading state visually
+        let indBtn = document.getElementById(`btn-${group.id}`);
+        if(indBtn) { indBtn.innerText = "⏳..."; indBtn.disabled = true; }
+      });
+
+      try {
+        // 2. Send ONE single payload to Firebase (Highly efficient!)
+        const docRef = doc(db, "judges", judgeId);
+        await setDoc(docRef, {
+          scores: allScores
+        }, { merge: true });
+
+        // Reset the browser warning
+        unsavedChanges = false;
+
+        // 3. UI Success Feedback
+        mainBtn.innerText = "✅ All Groups Saved!";
+        mainBtn.style.background = "green";
+
+        groupsData.forEach(group => {
+          let indBtn = document.getElementById(`btn-${group.id}`);
+          if(indBtn) {
+             indBtn.innerText = "✅ Saved!";
+             indBtn.style.background = "green";
+          }
+        });
+
+        // 4. Reset buttons after 3 seconds
+        setTimeout(() => { 
+          mainBtn.innerText = "💾 Save All Groups"; 
+          mainBtn.disabled = false; 
+          mainBtn.style.background = "#b30000"; 
+          
+          groupsData.forEach(group => {
+            let indBtn = document.getElementById(`btn-${group.id}`);
+            if(indBtn) {
+               indBtn.innerText = "💾 Update Score"; 
+               indBtn.disabled = false; 
+               indBtn.style.background = "#0056b3";
+            }
+          });
+        }, 3000);
+
+      } catch (e) {
+        console.error("Save all failed:", e);
+        mainBtn.innerText = "❌ Error Saving"; 
+        mainBtn.disabled = false;
+      }
+    };
+
+    // ✅ The Browser Warning Mechanism
+    window.addEventListener("beforeunload", function (e) {
+      if (unsavedChanges) {
+        // This triggers the browser's standard leave confirmation box
+        e.preventDefault(); 
+        e.returnValue = ''; 
+      }
+    });
+
+    initializeSystem();
+  </script>
 
     initializeSystem();
   </script>
