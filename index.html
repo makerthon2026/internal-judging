@@ -73,6 +73,45 @@
     .save-btn { background: #0056b3; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .save-btn:hover { background: #003d82; }
     .save-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* 📱 MOBILE RESPONSIVENESS (Media Query) */
+    @media (max-width: 600px) {
+      /* 1. Change the 2-column grid into a 1-column stack */
+      .score-grid { 
+        grid-template-columns: 1fr; 
+      }
+
+      /* 2. Stack the Group Title and Drive Button so they don't overlap */
+      .group-header { 
+        flex-direction: column; 
+        align-items: flex-start; 
+        gap: 15px; 
+      }
+      
+      /* Make the Drive button full-width for easy thumb tapping */
+      .drive-btn { 
+        width: 100%; 
+        box-sizing: border-box; 
+        text-align: center; 
+      }
+
+      /* 3. Stack the Total Score and Save Button */
+      .card-footer { 
+        flex-direction: column; 
+        gap: 15px; 
+      }
+      .save-btn { 
+        width: 100%; 
+      }
+
+      /* 4. Adjust the floating Save All button so it fits nicely on a phone */
+      .floating-save-btn {
+        bottom: 15px;
+        right: 15px;
+        padding: 12px 20px;
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 <body>
