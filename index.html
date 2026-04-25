@@ -182,7 +182,7 @@
     async function initializeSystem() {
       const statusDiv = document.getElementById('system-status');
       if (!judgeId) {
-        statusDiv.innerHTML = "❌ Invalid Link. Please use the private link provided by the admin.";
+        statusDiv.innerHTML = "❌ Invalid Link. Kindly use the private link provided by the admin.";
         statusDiv.style.background = "#ffe8e8"; statusDiv.style.color = "red";
         return;
       }
@@ -193,7 +193,7 @@
 
         if (docSnap.exists()) {
           currentJudgeData = docSnap.data();
-          statusDiv.innerHTML = `Greetings, <strong>${currentJudgeData.name}</strong>. Please evaluate all 8 groups below.`;
+          statusDiv.innerHTML = `Greetings, <strong>${currentJudgeData.name}</strong>. Kindly evaluate all 8 groups below.`;
           statusDiv.style.background = "#e8f5e9"; statusDiv.style.color = "green";
           
           buildGroupCards();
